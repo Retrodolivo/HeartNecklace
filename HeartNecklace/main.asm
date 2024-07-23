@@ -32,6 +32,9 @@
 reset:
 ; Stack pointer initializing
 		setStackto RAMEND
+; Shutdown the ADC, USI
+		ldi temp, (1<<PRADC) | (1<<PRUSI)
+		out PRR, temp
 ; Turn off analog comparator and its interrupt
 		cbi ACSR, ACIE
 		sbi ACSR, ACD
@@ -62,10 +65,24 @@ reset:
 		out MCUCR, temp
 		ldi temp, (1<<INT0)
 		out GIMSK, temp
+
 		sei
 		rjmp main
 
+sleepMode:
+		push temp
+; Configure sleep mode to power-down mode
+		ldi temp, (1<<SE) | (0<<SM0) | (1<<SM1)
+		out MCUCR, temp
+		sleep
+		nop
+		clr temp
+		out MCUCR, temp
+		pop temp
+		ret		
+
 main:
+		rcall sleepMode
 		rjmp main
 
 heartbeat:
